@@ -9,7 +9,9 @@ const startServer = async (): Promise<void> => {
 
     // Start Express server
     app.listen(env.PORT, () => {
-      console.log(`Server running in ${env.NODE_ENV} mode on http://localhost:${env.PORT}`);
+      console.log(
+        `Server running in ${env.NODE_ENV} mode on http://localhost:${env.PORT}`
+      );
       console.log(`API available at http://localhost:${env.PORT}/api/v1`);
     });
   } catch (error) {

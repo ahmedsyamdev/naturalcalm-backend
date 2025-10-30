@@ -12,7 +12,8 @@ router.get(
       status: 'OK',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      mongodb:
+        mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       redis: 'not configured', // Will be updated when Redis is added
     };
 

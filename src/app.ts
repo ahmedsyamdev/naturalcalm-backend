@@ -11,9 +11,10 @@ const app: Application = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: env.NODE_ENV === 'production'
-    ? ['https://yourdomain.com'] // Update with actual production domain
-    : ['http://localhost:3000', 'http://localhost:8080'],
+  origin:
+    env.NODE_ENV === 'production'
+      ? ['https://yourdomain.com'] // Update with actual production domain
+      : ['http://localhost:3000', 'http://localhost:8080'],
   credentials: true,
 };
 

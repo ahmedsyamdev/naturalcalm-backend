@@ -22,7 +22,7 @@ interface MongoError extends Error {
   errors?: Record<string, { message: string }>;
 }
 
-const handleCastErrorDB = (err: MongoError): AppError => {
+const handleCastErrorDB = (_err: MongoError): AppError => {
   const message = `Invalid value. Please use a valid ID.`;
   return new AppError(message, 400);
 };
@@ -34,7 +34,9 @@ const handleDuplicateFieldsDB = (err: MongoError): AppError => {
 };
 
 const handleValidationErrorDB = (err: MongoError): AppError => {
-  const errors = err.errors ? Object.values(err.errors).map(e => e.message) : [];
+  const errors = err.errors
+    ? Object.values(err.errors).map((e) => e.message)
+    : [];
   const message = `Invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
@@ -85,8 +87,10 @@ export const errorHandler = (
 
   // MongoDB errors
   if (err.name === 'CastError') error = handleCastErrorDB(err as MongoError);
-  if ((err as MongoError).code === 11000) error = handleDuplicateFieldsDB(err as MongoError);
-  if (err.name === 'ValidationError') error = handleValidationErrorDB(err as MongoError);
+  if ((err as MongoError).code === 11000)
+    error = handleDuplicateFieldsDB(err as MongoError);
+  if (err.name === 'ValidationError')
+    error = handleValidationErrorDB(err as MongoError);
 
   if (env.NODE_ENV === 'development') {
     sendErrorDev(error, res);
