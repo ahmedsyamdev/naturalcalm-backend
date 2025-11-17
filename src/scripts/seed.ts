@@ -355,6 +355,7 @@ async function seedPackages() {
       currency: "USD",
       periodType: "year",
       periodCount: 1,
+      durationInDays: 365,
       discountPercentage: 40,
       features: [
         "وصول غير محدود لجميع المحتويات",
@@ -375,6 +376,7 @@ async function seedPackages() {
       currency: "USD",
       periodType: "month",
       periodCount: 1,
+      durationInDays: 30,
       discountPercentage: 20,
       features: [
         "وصول للمحتوى الأساسي",
