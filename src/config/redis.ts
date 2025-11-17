@@ -241,7 +241,8 @@ export const cacheDelPattern = async (pattern: string): Promise<number> => {
 export const cacheTTL = async (key: string): Promise<number> => {
   try {
     const client = getRedisClient();
-    return await client.ttl(key);
+    const ttl = await client.ttl(key);
+    return Number(ttl);
   } catch (error) {
     logger.error(`Error getting TTL for cache key "${key}":`, error);
     return -1;
