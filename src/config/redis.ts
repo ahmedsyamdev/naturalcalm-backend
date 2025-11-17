@@ -10,9 +10,12 @@ let redisClient: RedisClientType | null = null;
  */
 export const connectRedis = async (): Promise<RedisClientType> => {
   try {
+    const redisUrl = env.REDIS_URL || 'redis://localhost:6379';
+    const isTLS = redisUrl.startsWith('rediss://');
+
     // Create Redis client
     redisClient = createClient({
-      url: env.REDIS_URL || 'redis://localhost:6379',
+      url: redisUrl,
       socket: {
         reconnectStrategy: (retries) => {
           if (retries > 10) {
@@ -22,6 +25,11 @@ export const connectRedis = async (): Promise<RedisClientType> => {
           // Exponential backoff: wait longer between each retry
           return Math.min(retries * 100, 3000);
         },
+        // Accept self-signed certificates for TLS connections (Coolify Redis)
+        ...(isTLS && {
+          tls: true,
+          rejectUnauthorized: false,
+        }),
       },
     });
 
