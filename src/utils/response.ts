@@ -14,15 +14,24 @@ interface PaginationData {
 
 export const successResponse = (
   res: Response,
-  data: SuccessResponseData,
+  data: SuccessResponseData | null = null,
   message = 'Success',
   statusCode = 200
 ): Response => {
-  return res.status(statusCode).json({
+  const response: {
+    success: boolean;
+    message: string;
+    data?: SuccessResponseData;
+  } = {
     success: true,
     message,
-    data,
-  });
+  };
+
+  if (data !== null) {
+    response.data = data;
+  }
+
+  return res.status(statusCode).json(response);
 };
 
 export const errorResponse = (

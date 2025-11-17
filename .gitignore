@@ -4,3 +4,19 @@ dist/
 *.log
 logs/
 .DS_Store
+
+# Documentation
+*.md
+
+# Coverage
+coverage/
+
+# OS files
+Thumbs.db
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Test artifacts
+*.local
