@@ -1,14 +1,15 @@
-import { createClient, RedisClientType } from 'redis';
+import { createClient } from 'redis';
 import { env } from './env';
 import logger from './logger';
 
-// Redis client instance
-let redisClient: RedisClientType | null = null;
+// Redis client instance - use ReturnType to get correct type
+type RedisClient = ReturnType<typeof createClient>;
+let redisClient: RedisClient | null = null;
 
 /**
  * Connect to Redis
  */
-export const connectRedis = async (): Promise<RedisClientType> => {
+export const connectRedis = async (): Promise<RedisClient> => {
   try {
     // Support both REDIS_URL and REDIS_HOST/REDIS_PORT configurations
     let clientConfig: Parameters<typeof createClient>[0];
@@ -114,7 +115,7 @@ export const disconnectRedis = async (): Promise<void> => {
 /**
  * Get Redis client instance
  */
-export const getRedisClient = (): RedisClientType => {
+export const getRedisClient = (): RedisClient => {
   if (!redisClient) {
     throw new Error('Redis client not initialized. Call connectRedis() first.');
   }
