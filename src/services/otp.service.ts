@@ -79,6 +79,14 @@ class OTPService {
         to: phone,
       });
 
+      // Log OTP for debugging (remove in production if security is a concern)
+      logger.info('\n' + '='.repeat(60));
+      logger.info('📱 OTP SENT VIA TWILIO');
+      logger.info('='.repeat(60));
+      logger.info(`📞 Phone: ${phone}`);
+      logger.info(`🔐 OTP Code: ${otp}`);
+      logger.info(`⏰ Valid for: 5 minutes`);
+      logger.info('='.repeat(60) + '\n');
       logger.info(`OTP sent successfully to ${phone}`);
     } catch (error: unknown) {
       logger.error(`Failed to send OTP to ${phone}:`, error);
