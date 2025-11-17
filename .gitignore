@@ -14,9 +14,9 @@ coverage/
 # OS files
 Thumbs.db
 
-# Uploads
-public/uploads/*
-!public/uploads/.gitkeep
+# Uploads - TEMPORARILY ALLOWING FOR INITIAL DEPLOYMENT
+# public/uploads/*
+# !public/uploads/.gitkeep
 
 # Test artifacts
 *.local
