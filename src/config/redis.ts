@@ -43,7 +43,11 @@ export const connectRedis = async (): Promise<RedisClientType> => {
     });
 
     redisClient.on('error', (err) => {
-      logger.error('Redis client error:', err);
+      logger.error('Redis client error:', {
+        message: err.message,
+        code: (err as NodeJS.ErrnoException).code,
+        stack: err.stack,
+      });
     });
 
     redisClient.on('reconnecting', () => {
