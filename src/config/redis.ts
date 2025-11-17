@@ -10,28 +10,55 @@ let redisClient: RedisClientType | null = null;
  */
 export const connectRedis = async (): Promise<RedisClientType> => {
   try {
-    const redisUrl = env.REDIS_URL || 'redis://localhost:6379';
-    const isTLS = redisUrl.startsWith('rediss://');
+    // Support both REDIS_URL and REDIS_HOST/REDIS_PORT configurations
+    let clientConfig: Parameters<typeof createClient>[0];
+
+    if (env.REDIS_URL) {
+      // Use full URL if provided
+      const redisUrl = env.REDIS_URL;
+      const isTLS = redisUrl.startsWith('rediss://');
+
+      clientConfig = {
+        url: redisUrl,
+        socket: {
+          reconnectStrategy: (retries) => {
+            if (retries > 10) {
+              logger.error('Too many Redis reconnection attempts, giving up');
+              return new Error('Too many reconnection attempts');
+            }
+            return Math.min(retries * 100, 3000);
+          },
+          ...(isTLS && {
+            tls: true,
+            rejectUnauthorized: false,
+          }),
+        },
+      };
+    } else {
+      // Use separate host/port/password (simpler for Coolify)
+      const host = env.REDIS_HOST || 'localhost';
+      const port = env.REDIS_PORT || 6379;
+
+      clientConfig = {
+        socket: {
+          host,
+          port,
+          reconnectStrategy: (retries) => {
+            if (retries > 10) {
+              logger.error('Too many Redis reconnection attempts, giving up');
+              return new Error('Too many reconnection attempts');
+            }
+            return Math.min(retries * 100, 3000);
+          },
+        },
+        ...(env.REDIS_PASSWORD && { password: env.REDIS_PASSWORD }),
+      };
+
+      logger.info(`Connecting to Redis at ${host}:${port}`);
+    }
 
     // Create Redis client
-    redisClient = createClient({
-      url: redisUrl,
-      socket: {
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            logger.error('Too many Redis reconnection attempts, giving up');
-            return new Error('Too many reconnection attempts');
-          }
-          // Exponential backoff: wait longer between each retry
-          return Math.min(retries * 100, 3000);
-        },
-        // Accept self-signed certificates for TLS connections (Coolify Redis)
-        ...(isTLS && {
-          tls: true,
-          rejectUnauthorized: false,
-        }),
-      },
-    });
+    redisClient = createClient(clientConfig);
 
     // Handle connection events
     redisClient.on('connect', () => {

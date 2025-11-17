@@ -11,7 +11,10 @@ interface EnvConfig {
   JWT_REFRESH_SECRET: string;
   JWT_EXPIRE: string;
   JWT_REFRESH_EXPIRE: string;
-  REDIS_URL: string;
+  REDIS_URL?: string;
+  REDIS_HOST?: string;
+  REDIS_PORT?: number;
+  REDIS_PASSWORD?: string;
   API_URL?: string;
   FRONTEND_URL?: string;
   CORS_ORIGINS?: string;
@@ -80,7 +83,10 @@ class EnvValidator {
         'JWT_REFRESH_EXPIRE',
         process.env.JWT_REFRESH_EXPIRE
       ),
-      REDIS_URL: this.validateRequired('REDIS_URL', process.env.REDIS_URL),
+      REDIS_URL: process.env.REDIS_URL,
+      REDIS_HOST: process.env.REDIS_HOST,
+      REDIS_PORT: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : undefined,
+      REDIS_PASSWORD: process.env.REDIS_PASSWORD,
       API_URL: process.env.API_URL,
       FRONTEND_URL: process.env.FRONTEND_URL,
       CORS_ORIGINS: process.env.CORS_ORIGINS,
