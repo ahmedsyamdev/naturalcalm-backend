@@ -1,0 +1,45 @@
+{
+  "name": "programs_search",
+  "searchAnalyzer": "lucene.standard",
+  "analyzer": "lucene.standard",
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "title": [
+        {
+          "type": "string",
+          "analyzer": "lucene.standard"
+        },
+        {
+          "type": "string",
+          "analyzer": "lucene.arabic"
+        }
+      ],
+      "description": [
+        {
+          "type": "string",
+          "analyzer": "lucene.standard"
+        },
+        {
+          "type": "string",
+          "analyzer": "lucene.arabic"
+        }
+      ],
+      "category": {
+        "type": "objectId"
+      },
+      "level": {
+        "type": "string"
+      },
+      "isPremium": {
+        "type": "boolean"
+      },
+      "isFeatured": {
+        "type": "boolean"
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    }
+  }
+}

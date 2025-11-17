@@ -1,0 +1,56 @@
+{
+  "name": "tracks_search",
+  "searchAnalyzer": "lucene.standard",
+  "analyzer": "lucene.standard",
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "title": [
+        {
+          "type": "string",
+          "analyzer": "lucene.standard"
+        },
+        {
+          "type": "string",
+          "analyzer": "lucene.arabic"
+        }
+      ],
+      "titleEn": {
+        "type": "string",
+        "analyzer": "lucene.english"
+      },
+      "description": [
+        {
+          "type": "string",
+          "analyzer": "lucene.standard"
+        },
+        {
+          "type": "string",
+          "analyzer": "lucene.arabic"
+        }
+      ],
+      "category": {
+        "type": "objectId"
+      },
+      "level": {
+        "type": "string"
+      },
+      "relaxationType": {
+        "type": "string"
+      },
+      "isPremium": {
+        "type": "boolean"
+      },
+      "isActive": {
+        "type": "boolean"
+      },
+      "durationSeconds": {
+        "type": "number"
+      },
+      "tags": {
+        "type": "string",
+        "analyzer": "lucene.standard"
+      }
+    }
+  }
+}

@@ -15,6 +15,7 @@ interface EnvConfig {
   REDIS_HOST?: string;
   REDIS_PORT?: number;
   REDIS_PASSWORD?: string;
+  REDIS_TLS?: boolean;
   API_URL?: string;
   FRONTEND_URL?: string;
   CORS_ORIGINS?: string;
@@ -87,6 +88,7 @@ class EnvValidator {
       REDIS_HOST: process.env.REDIS_HOST,
       REDIS_PORT: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : undefined,
       REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+      REDIS_TLS: process.env.REDIS_TLS === 'true',
       API_URL: process.env.API_URL,
       FRONTEND_URL: process.env.FRONTEND_URL,
       CORS_ORIGINS: process.env.CORS_ORIGINS,

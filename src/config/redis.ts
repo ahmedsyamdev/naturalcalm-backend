@@ -39,6 +39,7 @@ export const connectRedis = async (): Promise<RedisClient> => {
       // Use separate host/port/password (simpler for Coolify)
       const host = env.REDIS_HOST || 'localhost';
       const port = env.REDIS_PORT || 6379;
+      const useTLS = env.REDIS_TLS || false;
 
       clientConfig = {
         socket: {
@@ -51,11 +52,15 @@ export const connectRedis = async (): Promise<RedisClient> => {
             }
             return Math.min(retries * 100, 3000);
           },
+          ...(useTLS && {
+            tls: true,
+            rejectUnauthorized: false,
+          }),
         },
         ...(env.REDIS_PASSWORD && { password: env.REDIS_PASSWORD }),
       };
 
-      logger.info(`Connecting to Redis at ${host}:${port}`);
+      logger.info(`Connecting to Redis at ${host}:${port}${useTLS ? ' (TLS)' : ''}`);
     }
 
     // Create Redis client
