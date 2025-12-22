@@ -17,6 +17,7 @@ const seedPackages = async (): Promise<void> => {
         currency: 'USD',
         periodType: 'month',
         periodCount: 1,
+        durationInDays: 30,
         discountPercentage: 0,
         features: [
           'وصول إلى المحتوى المميز',
@@ -27,6 +28,25 @@ const seedPackages = async (): Promise<void> => {
         displayOrder: 1,
       },
       {
+        name: 'الباقة القياسية',
+        nameEn: 'Standard Package',
+        type: 'standard',
+        price: 24.99,
+        currency: 'USD',
+        periodType: 'month',
+        periodCount: 3,
+        durationInDays: 90,
+        discountPercentage: 10,
+        features: [
+          'وصول إلى المحتوى المميز',
+          'جودة صوت عالية',
+          'بدون إعلانات',
+          'محتوى حصري',
+        ],
+        isActive: true,
+        displayOrder: 2,
+      },
+      {
         name: 'الباقة المتميزة',
         nameEn: 'Premium Package',
         type: 'premium',
@@ -34,6 +54,7 @@ const seedPackages = async (): Promise<void> => {
         currency: 'USD',
         periodType: 'year',
         periodCount: 1,
+        durationInDays: 365,
         discountPercentage: 20,
         features: [
           'وصول غير محدود لجميع المحتوى',
@@ -43,7 +64,7 @@ const seedPackages = async (): Promise<void> => {
           'تحديثات أسبوعية',
         ],
         isActive: true,
-        displayOrder: 2,
+        displayOrder: 3,
       },
     ];
 

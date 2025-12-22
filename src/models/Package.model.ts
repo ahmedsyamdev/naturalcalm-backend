@@ -5,7 +5,7 @@ import timestampsPlugin from './plugins/timestamps';
 export interface IPackage extends Document {
   name: string;
   nameEn?: string;
-  type: 'basic' | 'premium';
+  type: 'basic' | 'standard' | 'premium';
   price: number;
   currency: string;
   periodType: 'month' | 'year';
@@ -25,7 +25,7 @@ export interface IPackage extends Document {
 // Query helper types for Package
 interface IPackageQueryHelpers {
   active(): QueryWithHelpers<IPackage[], IPackage, IPackageQueryHelpers>;
-  byType(type: 'basic' | 'premium'): QueryWithHelpers<IPackage[], IPackage, IPackageQueryHelpers>;
+  byType(type: 'basic' | 'standard' | 'premium'): QueryWithHelpers<IPackage[], IPackage, IPackageQueryHelpers>;
 }
 
 // Package model interface with statics
@@ -52,7 +52,7 @@ const PackageSchema = new Schema<IPackage, IPackageModel, Record<string, never>,
       type: String,
       required: [true, 'Package type is required'],
       enum: {
-        values: ['basic', 'premium'],
+        values: ['basic', 'standard', 'premium'],
         message: '{VALUE} is not a valid package type',
       },
       unique: true,
@@ -176,7 +176,7 @@ PackageSchema.query.active = function (this: QueryWithHelpers<IPackage[], IPacka
   return this.where({ isActive: true });
 };
 
-PackageSchema.query.byType = function (this: QueryWithHelpers<IPackage[], IPackage, IPackageQueryHelpers>, type: 'basic' | 'premium') {
+PackageSchema.query.byType = function (this: QueryWithHelpers<IPackage[], IPackage, IPackageQueryHelpers>, type: 'basic' | 'standard' | 'premium') {
   return this.where({ type });
 };
 
@@ -187,6 +187,10 @@ PackageSchema.statics.getActivePackages = function () {
 
 PackageSchema.statics.getPremiumPackage = function () {
   return this.findOne({ type: 'premium', isActive: true });
+};
+
+PackageSchema.statics.getStandardPackage = function () {
+  return this.findOne({ type: 'standard', isActive: true });
 };
 
 PackageSchema.statics.getBasicPackage = function () {

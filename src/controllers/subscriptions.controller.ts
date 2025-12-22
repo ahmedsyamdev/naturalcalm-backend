@@ -436,19 +436,23 @@ export const getSubscriptionStats = asyncHandler(
     let mrr = 0;
     let arr = 0;
     let basicSubscriptions = 0;
+    let standardSubscriptions = 0;
     let premiumSubscriptions = 0;
 
     for (const sub of activeSubscriptions) {
       const pkg = sub.packageId as unknown as IPackage;
       const packageName = pkg?.name || 'Unknown';
+      const packageType = pkg?.type || '';
 
       subscriptionsByPackage[packageName] =
         (subscriptionsByPackage[packageName] || 0) + 1;
 
-      // Count Basic vs Premium
-      if (packageName.toLowerCase().includes('basic') || packageName.toLowerCase().includes('أساسي')) {
+      // Count by package type
+      if (packageType === 'basic' || packageName.toLowerCase().includes('basic') || packageName.toLowerCase().includes('أساسي')) {
         basicSubscriptions++;
-      } else if (packageName.toLowerCase().includes('premium') || packageName.toLowerCase().includes('مميز') || packageName.toLowerCase().includes('متميز')) {
+      } else if (packageType === 'standard' || packageName.toLowerCase().includes('standard') || packageName.toLowerCase().includes('قياسي')) {
+        standardSubscriptions++;
+      } else if (packageType === 'premium' || packageName.toLowerCase().includes('premium') || packageName.toLowerCase().includes('مميز') || packageName.toLowerCase().includes('متميز')) {
         premiumSubscriptions++;
       }
 
@@ -488,6 +492,7 @@ export const getSubscriptionStats = asyncHandler(
         totalActiveSubscriptions: totalActiveSubscriptions,
         activeSubscriptionsCount: totalActiveSubscriptions, // Backward compatibility
         basicSubscriptions,
+        standardSubscriptions,
         premiumSubscriptions,
         monthlyRecurringRevenue: Math.round(mrr * 100) / 100,
         annualRecurringRevenue: Math.round(arr * 100) / 100,
