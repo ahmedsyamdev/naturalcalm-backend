@@ -1,25 +1,7 @@
-import twilio from 'twilio';
-import { env } from '../config/env';
+import { emailService } from './email.service';
 import logger from '../utils/logger';
 
 class OTPService {
-  private client: twilio.Twilio | null = null;
-  private fromNumber: string;
-
-  constructor() {
-    this.fromNumber = env.TWILIO_PHONE_NUMBER;
-  }
-
-  /**
-   * Initialize Twilio client lazily
-   */
-  private getClient(): twilio.Twilio {
-    if (!this.client) {
-      this.client = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
-    }
-    return this.client;
-  }
-
   /**
    * Generate a 6-digit OTP code
    */
@@ -35,62 +17,42 @@ class OTPService {
   }
 
   /**
-   * Check if Twilio is properly configured
+   * Send OTP via Email
    */
-  private isTwilioConfigured(): boolean {
-    return (
-      env.TWILIO_ACCOUNT_SID !== 'your-twilio-account-sid' &&
-      env.TWILIO_AUTH_TOKEN !== 'your-twilio-auth-token' &&
-      env.TWILIO_PHONE_NUMBER !== 'your-twilio-phone-number' &&
-      env.TWILIO_ACCOUNT_SID.length > 0 &&
-      env.TWILIO_AUTH_TOKEN.length > 0 &&
-      env.TWILIO_PHONE_NUMBER.length > 0 &&
-      env.TWILIO_ACCOUNT_SID.startsWith('AC') // Twilio Account SIDs must start with AC
-    );
-  }
-
-  /**
-   * Send OTP via SMS using Twilio (or log to console if not configured)
-   */
-  async sendOTP(phone: string, otp: string): Promise<void> {
+  async sendOTP(email: string, otp: string): Promise<void> {
     try {
-      const message = `رمز التحقق الخاص بك في Naturacalm هو: ${otp}\nصالح لمدة 5 دقائق.`;
+      await emailService.sendOTPEmail(email, otp);
 
-      // Check if Twilio is configured
-      if (!this.isTwilioConfigured()) {
-        // Development mode: Log OTP to console
-        logger.info('\n' + '='.repeat(60));
-        logger.info('📱 OTP VERIFICATION CODE (Development Mode)');
-        logger.info('='.repeat(60));
-        logger.info(`📞 Phone: ${phone}`);
-        logger.info(`🔐 OTP Code: ${otp}`);
-        logger.info(`⏰ Valid for: 5 minutes`);
-        logger.info(`💬 Message: ${message}`);
-        logger.info('='.repeat(60) + '\n');
-        logger.info(`OTP logged for ${phone} (Twilio not configured)`);
-        return;
-      }
-
-      // Production mode: Send via Twilio
-      const client = this.getClient();
-      await client.messages.create({
-        body: message,
-        from: this.fromNumber,
-        to: phone,
-      });
-
-      // Log OTP for debugging (remove in production if security is a concern)
       logger.info('\n' + '='.repeat(60));
-      logger.info('📱 OTP SENT VIA TWILIO');
+      logger.info('📧 OTP VERIFICATION CODE');
       logger.info('='.repeat(60));
-      logger.info(`📞 Phone: ${phone}`);
+      logger.info(`📬 Email: ${email}`);
       logger.info(`🔐 OTP Code: ${otp}`);
       logger.info(`⏰ Valid for: 5 minutes`);
       logger.info('='.repeat(60) + '\n');
-      logger.info(`OTP sent successfully to ${phone}`);
     } catch (error: unknown) {
-      logger.error(`Failed to send OTP to ${phone}:`, error);
+      logger.error(`Failed to send OTP to ${email}:`, error);
       throw new Error('Failed to send OTP. Please try again.');
+    }
+  }
+
+  /**
+   * Send password reset OTP via Email
+   */
+  async sendPasswordResetOTP(email: string, otp: string): Promise<void> {
+    try {
+      await emailService.sendPasswordResetEmail(email, otp);
+
+      logger.info('\n' + '='.repeat(60));
+      logger.info('📧 PASSWORD RESET OTP');
+      logger.info('='.repeat(60));
+      logger.info(`📬 Email: ${email}`);
+      logger.info(`🔐 OTP Code: ${otp}`);
+      logger.info(`⏰ Valid for: 5 minutes`);
+      logger.info('='.repeat(60) + '\n');
+    } catch (error: unknown) {
+      logger.error(`Failed to send password reset OTP to ${email}:`, error);
+      throw new Error('Failed to send password reset email. Please try again.');
     }
   }
 

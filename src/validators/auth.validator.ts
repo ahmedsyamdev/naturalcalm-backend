@@ -90,10 +90,10 @@ export const validateRegister = (
         message: 'Name must be between 2 and 100 characters',
       },
       {
-        field: 'phone',
+        field: 'email',
         required: true,
-        validator: validators.isValidPhone,
-        message: 'Please provide a valid phone number',
+        validator: validators.isValidEmail,
+        message: 'Please provide a valid email address',
       },
       {
         field: 'password',
@@ -119,7 +119,6 @@ export const validateRegister = (
 
 /**
  * Login validation middleware
- * Accepts either phone or email
  */
 export const validateLogin = (
   req: Request,
@@ -127,36 +126,19 @@ export const validateLogin = (
   next: NextFunction
 ): void => {
   try {
-    const { phone, email, password } = req.body;
-
-    // Check that at least one identifier is provided
-    if (!phone && !email) {
-      throw new ValidationError(
-        'Please provide either a phone number or email address',
-        'phone'
-      );
-    }
-
-    // Validate phone if provided
-    if (phone && !validators.isValidPhone(phone)) {
-      throw new ValidationError(
-        'Please provide a valid phone number',
-        'phone'
-      );
-    }
-
-    // Validate email if provided
-    if (email && !validators.isValidEmail(email)) {
-      throw new ValidationError(
-        'Please provide a valid email address',
-        'email'
-      );
-    }
-
-    // Validate password
-    if (!password) {
-      throw new ValidationError('Password is required', 'password');
-    }
+    validateFields(req.body, [
+      {
+        field: 'email',
+        required: true,
+        validator: validators.isValidEmail,
+        message: 'Please provide a valid email address',
+      },
+      {
+        field: 'password',
+        required: true,
+        message: 'Password is required',
+      },
+    ]);
 
     next();
   } catch (error) {
@@ -183,10 +165,10 @@ export const validateOTPSend = (
   try {
     validateFields(req.body, [
       {
-        field: 'phone',
+        field: 'email',
         required: true,
-        validator: validators.isValidPhone,
-        message: 'Please provide a valid phone number',
+        validator: validators.isValidEmail,
+        message: 'Please provide a valid email address',
       },
     ]);
 
@@ -215,10 +197,10 @@ export const validateOTPVerify = (
   try {
     validateFields(req.body, [
       {
-        field: 'phone',
+        field: 'email',
         required: true,
-        validator: validators.isValidPhone,
-        message: 'Please provide a valid phone number',
+        validator: validators.isValidEmail,
+        message: 'Please provide a valid email address',
       },
       {
         field: 'otp',
@@ -253,10 +235,10 @@ export const validateForgotPassword = (
   try {
     validateFields(req.body, [
       {
-        field: 'phone',
+        field: 'email',
         required: true,
-        validator: validators.isValidPhone,
-        message: 'Please provide a valid phone number',
+        validator: validators.isValidEmail,
+        message: 'Please provide a valid email address',
       },
     ]);
 
@@ -285,10 +267,10 @@ export const validateResetPassword = (
   try {
     validateFields(req.body, [
       {
-        field: 'phone',
+        field: 'email',
         required: true,
-        validator: validators.isValidPhone,
-        message: 'Please provide a valid phone number',
+        validator: validators.isValidEmail,
+        message: 'Please provide a valid email address',
       },
       {
         field: 'otp',

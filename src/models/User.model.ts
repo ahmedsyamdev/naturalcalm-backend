@@ -61,8 +61,8 @@ interface ISocialProvider {
 // User document interface
 export interface IUser extends Document {
   name: string;
-  phone: string;
-  email?: string;
+  phone?: string;
+  email: string;
   password: string;
   avatar?: string;
   isVerified: boolean;
@@ -237,8 +237,8 @@ const UserSchema = new Schema<IUser, IUserModel>(
     },
     email: {
       type: String,
+      required: [true, 'Email is required'],
       unique: true,
-      sparse: true,
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
@@ -350,7 +350,7 @@ UserSchema.methods.comparePassword = async function (
 UserSchema.methods.generateJWT = function (): string {
   const payload = {
     id: this._id,
-    phone: this.phone,
+    email: this.email,
     role: this.role,
   };
 

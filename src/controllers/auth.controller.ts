@@ -14,19 +14,19 @@ import { successResponse, errorResponse } from '../utils/response';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, phone, password } = req.body;
+    const { name, email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ phone });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      errorResponse(res, 'Phone number is already registered', 400);
+      errorResponse(res, 'Email is already registered', 400);
       return;
     }
 
     // Create user
     const user = await User.create({
       name,
-      phone,
+      email: email.toLowerCase(),
       password,
       isVerified: false,
     });
@@ -39,14 +39,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    // Send OTP via Twilio
-    await otpService.sendOTP(phone, otp);
+    // Send OTP via Email
+    await otpService.sendOTP(email, otp);
 
     // Return user without password
     const userResponse = {
       id: String(user._id),
       name: user.name,
-      phone: user.phone,
+      email: user.email,
       isVerified: user.isVerified,
     };
 
@@ -55,7 +55,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       {
         user: userResponse,
       },
-      'User registered successfully. OTP sent to your phone.',
+      'User registered successfully. OTP sent to your email.',
       201
     );
   } catch (error: unknown) {
@@ -66,16 +66,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * @desc    Send OTP to phone
+ * @desc    Send OTP to email
  * @route   POST /api/v1/auth/otp/send
  * @access  Public
  */
 export const sendOTP = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { phone } = req.body;
+    const { email } = req.body;
 
     // Find user
-    const user = await User.findOne({ phone }).select('+otp +otpExpires');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
     if (!user) {
       errorResponse(res, 'User not found', 404);
       return;
@@ -100,7 +100,7 @@ export const sendOTP = async (req: Request, res: Response): Promise<void> => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    await otpService.sendOTP(phone, otp);
+    await otpService.sendOTP(email, otp);
 
     successResponse(res, null, 'OTP sent successfully');
   } catch (error: unknown) {
@@ -117,10 +117,10 @@ export const sendOTP = async (req: Request, res: Response): Promise<void> => {
  */
 export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { phone, otp } = req.body;
+    const { email, otp } = req.body;
 
     // Find user with OTP fields
-    const user = await User.findOne({ phone }).select('+otp +otpExpires');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
     if (!user) {
       errorResponse(res, 'User not found', 404);
       return;
@@ -161,7 +161,6 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
     const userResponse = {
       id: String(user._id),
       name: user.name,
-      phone: user.phone,
       email: user.email,
       avatar: user.avatar,
       isVerified: user.isVerified,
@@ -192,31 +191,10 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
  */
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { phone, email, password } = req.body;
+    const { email, password } = req.body;
 
-    let user;
-
-    if (phone) {
-      // Try to find user with exact phone match first
-      user = await User.findOne({ phone }).select('+password');
-
-      // If not found and phone starts with country code, try without it (local format)
-      if (!user && phone.startsWith('+')) {
-        // Extract the number part after country code
-        // For +201234567890, try 01234567890
-        const phoneWithoutCode = phone.replace(/^\+\d{1,3}/, '0');
-        user = await User.findOne({ phone: phoneWithoutCode }).select('+password');
-      }
-
-      // If not found and phone is local format (starts with 0), try with common country codes
-      if (!user && phone.startsWith('0')) {
-        // Try with +20 (Egypt) country code
-        const phoneWithCode = '+20' + phone.substring(1);
-        user = await User.findOne({ phone: phoneWithCode }).select('+password');
-      }
-    } else if (email) {
-      user = await User.findOne({ email }).select('+password');
-    }
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user) {
       errorResponse(res, 'Invalid credentials', 401);
@@ -262,7 +240,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const userResponse = {
       id: String(user._id),
       name: user.name,
-      phone: user.phone,
       email: user.email,
       avatar: user.avatar,
       isVerified: user.isVerified,
@@ -400,10 +377,10 @@ export const forgotPassword = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { phone } = req.body;
+    const { email } = req.body;
 
     // Find user
-    const user = await User.findOne({ phone }).select('+otp +otpExpires');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
     if (!user) {
       errorResponse(res, 'User not found', 404);
       return;
@@ -428,7 +405,7 @@ export const forgotPassword = async (
     user.otpExpires = otpExpires;
     await user.save();
 
-    await otpService.sendOTP(phone, otp);
+    await otpService.sendPasswordResetOTP(email, otp);
 
     successResponse(res, null, 'Password reset OTP sent successfully');
   } catch (error: unknown) {
@@ -448,10 +425,10 @@ export const resetPassword = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { phone, otp, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body;
 
     // Find user with OTP fields
-    const user = await User.findOne({ phone }).select('+otp +otpExpires');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
     if (!user) {
       errorResponse(res, 'User not found', 404);
       return;
@@ -614,7 +591,6 @@ export const socialAuth = async (
     const userResponse = {
       id: String(user._id),
       name: user.name,
-      phone: user.phone,
       email: user.email,
       avatar: user.avatar,
       isVerified: user.isVerified,
