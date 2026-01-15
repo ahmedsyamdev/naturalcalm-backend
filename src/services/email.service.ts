@@ -4,7 +4,7 @@ import logger from '../utils/logger';
 
 class EmailService {
   private resend: Resend | null = null;
-  private fromEmail: string = 'Naturacalm <onboarding@resend.dev>';
+  private fromEmail: string = 'Naturacalm <noreply@naturacalm.site>';
 
   constructor() {
     this.initialize();
