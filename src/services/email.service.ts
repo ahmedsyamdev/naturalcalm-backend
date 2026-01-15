@@ -33,7 +33,7 @@ class EmailService {
     try {
       const { error } = await this.resend.emails.send({
         from: this.fromEmail,
-        to: email,
+        to: [email],
         subject,
         html,
       });
@@ -62,7 +62,7 @@ class EmailService {
     try {
       const { error } = await this.resend.emails.send({
         from: this.fromEmail,
-        to: email,
+        to: [email],
         subject,
         html,
       });
