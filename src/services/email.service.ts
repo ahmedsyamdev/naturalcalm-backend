@@ -1,36 +1,21 @@
-import nodemailer, { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { env } from '../config/env';
 import logger from '../utils/logger';
 
 class EmailService {
-  private transporter: Transporter | null = null;
+  private resend: Resend | null = null;
+  private fromEmail: string = 'Naturacalm <noreply@naturacalm.site>';
 
   constructor() {
-    this.initializeTransporter();
+    this.initialize();
   }
 
-  private initializeTransporter(): void {
-    if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
-      this.transporter = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT || 587,
-        secure: env.SMTP_PORT === 465,
-        auth: {
-          user: env.SMTP_USER,
-          pass: env.SMTP_PASS,
-        },
-      });
-
-      // Verify connection
-      this.transporter.verify((error) => {
-        if (error) {
-          logger.error('SMTP connection error:', error);
-        } else {
-          logger.info('SMTP server is ready to send emails');
-        }
-      });
+  private initialize(): void {
+    if (env.RESEND_API_KEY) {
+      this.resend = new Resend(env.RESEND_API_KEY);
+      logger.info('Resend email service initialized');
     } else {
-      logger.warn('SMTP not configured. Email sending will be simulated in development mode.');
+      logger.warn('RESEND_API_KEY not configured. Email sending will be simulated in development mode.');
     }
   }
 
@@ -38,7 +23,7 @@ class EmailService {
     const subject = 'رمز التحقق - Naturacalm';
     const html = this.getOTPEmailTemplate(otp);
 
-    if (!this.transporter) {
+    if (!this.resend) {
       // Development mode - log OTP to console
       logger.info(`[DEV MODE] OTP for ${email}: ${otp}`);
       logger.info(`[DEV MODE] Email would be sent with subject: ${subject}`);
@@ -46,12 +31,18 @@ class EmailService {
     }
 
     try {
-      await this.transporter.sendMail({
-        from: env.SMTP_FROM || `"Naturacalm" <${env.SMTP_USER}>`,
+      const { error } = await this.resend.emails.send({
+        from: this.fromEmail,
         to: email,
         subject,
         html,
       });
+
+      if (error) {
+        logger.error('Failed to send OTP email:', error);
+        throw new Error('Failed to send verification email');
+      }
+
       logger.info(`OTP email sent to ${email}`);
     } catch (error) {
       logger.error('Failed to send OTP email:', error);
@@ -63,18 +54,24 @@ class EmailService {
     const subject = 'إعادة تعيين كلمة المرور - Naturacalm';
     const html = this.getPasswordResetEmailTemplate(otp);
 
-    if (!this.transporter) {
+    if (!this.resend) {
       logger.info(`[DEV MODE] Password reset OTP for ${email}: ${otp}`);
       return;
     }
 
     try {
-      await this.transporter.sendMail({
-        from: env.SMTP_FROM || `"Naturacalm" <${env.SMTP_USER}>`,
+      const { error } = await this.resend.emails.send({
+        from: this.fromEmail,
         to: email,
         subject,
         html,
       });
+
+      if (error) {
+        logger.error('Failed to send password reset email:', error);
+        throw new Error('Failed to send password reset email');
+      }
+
       logger.info(`Password reset email sent to ${email}`);
     } catch (error) {
       logger.error('Failed to send password reset email:', error);
