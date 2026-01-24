@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User.model';
+import { UserFavorite } from '../models/UserFavorite.model';
+import { UserProgram } from '../models/UserProgram.model';
+import { ListeningSession } from '../models/ListeningSession.model';
+import { CustomProgram } from '../models/CustomProgram.model';
+import { Notification } from '../models/Notification.model';
+import { tokenService } from '../services/token.service';
 import { getUserListeningPatterns, updateUserListeningPatterns } from '../utils/listeningStats';
 import logger from '../utils/logger';
 import { successResponse, errorResponse } from '../utils/response';
@@ -160,6 +166,60 @@ export const getListeningPatterns = async (
   } catch (error: unknown) {
     logger.error('Get listening patterns error:', error);
     const message = error instanceof Error ? error.message : 'Failed to retrieve listening patterns';
+    errorResponse(res, message, 500);
+  }
+};
+
+/**
+ * @desc    Delete user account permanently
+ * @route   DELETE /api/v1/users/me
+ * @access  Private
+ */
+export const deleteAccount = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      errorResponse(res, 'User not authenticated', 401);
+      return;
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      errorResponse(res, 'User not found', 404);
+      return;
+    }
+
+    // Delete all user-related data
+    await Promise.all([
+      // Delete user favorites
+      UserFavorite.deleteMany({ user: userId }),
+      // Delete user programs progress
+      UserProgram.deleteMany({ user: userId }),
+      // Delete listening sessions
+      ListeningSession.deleteMany({ user: userId }),
+      // Delete custom programs
+      CustomProgram.deleteMany({ user: userId }),
+      // Delete notifications
+      Notification.deleteMany({ user: userId }),
+      // Invalidate all tokens
+      tokenService.invalidateRefreshToken(userId),
+    ]);
+
+    // Permanently delete the user
+    await User.findByIdAndDelete(userId);
+
+    logger.info(`User account deleted: ${userId}`);
+
+    successResponse(res, null, 'Account deleted successfully');
+  } catch (error: unknown) {
+    logger.error('Delete account error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to delete account';
     errorResponse(res, message, 500);
   }
 };

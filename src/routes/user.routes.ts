@@ -3,6 +3,7 @@ import {
   getCurrentUser,
   updateCurrentUser,
   getListeningPatterns,
+  deleteAccount,
 } from '../controllers/user.controller';
 import {
   getListeningHistory,
@@ -40,6 +41,9 @@ router.get('/me', protect, asyncHandler(getCurrentUser));
 
 // Update current user profile
 router.put('/me', protect, asyncHandler(updateCurrentUser));
+
+// Delete user account
+router.delete('/me', protect, asyncHandler(deleteAccount));
 
 // Get listening history
 router.get(
