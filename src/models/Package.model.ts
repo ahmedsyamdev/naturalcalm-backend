@@ -65,7 +65,7 @@ const PackageSchema = new Schema<IPackage, IPackageModel, Record<string, never>,
     },
     currency: {
       type: String,
-      default: 'SAR',
+      default: 'USD',
       uppercase: true,
     },
     periodType: {
