@@ -31,7 +31,7 @@ export interface IListeningPatterns {
 // FCM Device interface
 export interface IFCMDevice {
   token: string;
-  platform: 'web' | 'android' | 'ios';
+  platform: 'web' | 'android' | 'ios' | 'mobile';
   browser?: string;
   addedAt: Date;
   lastUsedAt: Date;
@@ -121,7 +121,7 @@ const FCMDeviceSchema = new Schema<IFCMDevice>(
     },
     platform: {
       type: String,
-      enum: ['web', 'android', 'ios'],
+      enum: ['web', 'android', 'ios', 'mobile'],
       default: 'web',
     },
     browser: String,
