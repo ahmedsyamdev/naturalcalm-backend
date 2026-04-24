@@ -10,13 +10,25 @@ let firebaseApp: admin.app.App | null = null;
  */
 export const initializeFirebase = (): admin.app.App | null => {
   try {
-    // Check if Firebase credentials are provided
+    // Prefer the base64-encoded service account JSON when present.
+    // This sidesteps newline/quoting issues common in PaaS env-var editors
+    // that mangle multi-line values like the PEM private key.
+    if (env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+      const json = Buffer.from(env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+      const serviceAccount = JSON.parse(json);
+      firebaseApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      logger.info('✅ Firebase Admin SDK initialized successfully (from base64 service account)');
+      return firebaseApp;
+    }
+
+    // Fallback: three separate env vars (project_id, client_email, private_key).
     if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_PRIVATE_KEY || !env.FIREBASE_CLIENT_EMAIL) {
       logger.info('Firebase credentials not configured. Push notifications will be disabled.');
       return null;
     }
 
-    // Initialize Firebase Admin SDK
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert({
         projectId: env.FIREBASE_PROJECT_ID,
