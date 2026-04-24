@@ -3,6 +3,7 @@ import { env } from './config/env';
 import { connectDatabase } from './config/database';
 import { connectRedis } from './config/redis';
 import { createIndexes } from './config/indexes';
+import { initializeFirebase } from './config/firebase';
 import logger from './config/logger';
 import { scheduleSessionCleanup } from './jobs/sessionCleanup.job';
 import { scheduleListeningPatternsUpdate } from './jobs/updateListeningPatterns.job';
@@ -30,6 +31,9 @@ const startServer = async (): Promise<void> => {
       logger.warn('⚠️  Redis connection failed. Caching will be disabled.');
       logger.warn('Redis error:', error);
     }
+
+    // Initialize Firebase Admin SDK (optional - push will be disabled without it)
+    initializeFirebase();
 
     // Schedule background jobs
     scheduleSessionCleanup();
