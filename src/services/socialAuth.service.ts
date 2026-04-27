@@ -1,7 +1,24 @@
 import { OAuth2Client } from 'google-auth-library';
 import axios from 'axios';
+import jwt, { JwtHeader, SigningKeyCallback } from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
 import { env } from '../config/env';
 import logger from '../utils/logger';
+
+const APPLE_ISSUER = 'https://appleid.apple.com';
+const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
+
+interface AppleIdTokenPayload {
+  iss: string;
+  aud: string;
+  sub: string;
+  exp: number;
+  iat: number;
+  email?: string;
+  email_verified?: boolean | string;
+  is_private_email?: boolean | string;
+  nonce?: string;
+}
 
 export interface SocialAuthPayload {
   providerId: string;
@@ -12,6 +29,39 @@ export interface SocialAuthPayload {
 
 class SocialAuthService {
   private googleClient: OAuth2Client | null = null;
+  private appleJwksClient: jwksClient.JwksClient | null = null;
+
+  private getAppleJwksClient(): jwksClient.JwksClient {
+    if (!this.appleJwksClient) {
+      this.appleJwksClient = jwksClient({
+        jwksUri: APPLE_JWKS_URI,
+        cache: true,
+        cacheMaxEntries: 5,
+        cacheMaxAge: 24 * 60 * 60 * 1000,
+        rateLimit: true,
+        jwksRequestsPerMinute: 10,
+        timeout: 10_000,
+      });
+    }
+    return this.appleJwksClient;
+  }
+
+  private getApplePublicKey = (
+    header: JwtHeader,
+    callback: SigningKeyCallback
+  ): void => {
+    if (!header.kid) {
+      callback(new Error('Apple token missing kid header'));
+      return;
+    }
+    this.getAppleJwksClient().getSigningKey(header.kid, (err, key) => {
+      if (err || !key) {
+        callback(err || new Error('Apple signing key not found'));
+        return;
+      }
+      callback(null, key.getPublicKey());
+    });
+  };
 
   /**
    * Initialize Google OAuth client lazily
@@ -102,63 +152,74 @@ class SocialAuthService {
   }
 
   /**
-   * Verify Apple identity token and extract user info
-   * Note: Apple token verification requires more complex setup with JWT verification
-   * This is a simplified version - in production, you should verify the JWT signature
+   * Verify Apple identity token (signature + claims) and extract user info.
+   * Uses Apple's JWKS endpoint to verify the RS256 signature.
    */
   async verifyAppleToken(
     identityToken: string,
     user?: { name?: { firstName?: string; lastName?: string } }
   ): Promise<SocialAuthPayload> {
+    if (!env.APPLE_CLIENT_ID) {
+      throw new Error('Apple OAuth not configured');
+    }
+
+    const audienceList = env.APPLE_CLIENT_ID.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (audienceList.length === 0) {
+      throw new Error('Apple OAuth not configured');
+    }
+    const audience: [string, ...string[]] = [
+      audienceList[0],
+      ...audienceList.slice(1),
+    ];
+
+    let payload: AppleIdTokenPayload;
     try {
-      if (!env.APPLE_CLIENT_ID) {
-        throw new Error('Apple OAuth not configured');
-      }
-
-      // Decode the identity token (without verification for now)
-      // In production, you should verify the JWT signature using Apple's public keys
-      const parts = identityToken.split('.');
-      if (parts.length !== 3) {
-        throw new Error('Invalid Apple token format');
-      }
-
-      const payload = JSON.parse(
-        Buffer.from(parts[1], 'base64').toString('utf-8')
-      );
-
-      // Verify basic claims
-      if (
-        !payload.sub ||
-        payload.aud !== env.APPLE_CLIENT_ID ||
-        payload.iss !== 'https://appleid.apple.com'
-      ) {
-        throw new Error('Invalid Apple token claims');
-      }
-
-      // Check token expiration
-      const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < now) {
-        throw new Error('Apple token expired');
-      }
-
-      // Build name from user object if provided (only sent on first login)
-      let name: string | undefined;
-      if (user?.name) {
-        const firstName = user.name.firstName || '';
-        const lastName = user.name.lastName || '';
-        name = `${firstName} ${lastName}`.trim() || undefined;
-      }
-
-      return {
-        providerId: payload.sub,
-        email: payload.email,
-        name,
-        avatar: undefined, // Apple doesn't provide avatar
-      };
+      payload = await new Promise<AppleIdTokenPayload>((resolve, reject) => {
+        jwt.verify(
+          identityToken,
+          this.getApplePublicKey,
+          {
+            algorithms: ['RS256'],
+            issuer: APPLE_ISSUER,
+            audience,
+          },
+          (err, decoded) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            if (!decoded || typeof decoded === 'string') {
+              reject(new Error('Invalid Apple token payload'));
+              return;
+            }
+            resolve(decoded as AppleIdTokenPayload);
+          }
+        );
+      });
     } catch (error: unknown) {
       logger.error('Apple token verification failed:', error);
       throw new Error('Invalid Apple token');
     }
+
+    if (!payload.sub) {
+      throw new Error('Invalid Apple token claims');
+    }
+
+    let name: string | undefined;
+    if (user?.name) {
+      const firstName = user.name.firstName || '';
+      const lastName = user.name.lastName || '';
+      name = `${firstName} ${lastName}`.trim() || undefined;
+    }
+
+    return {
+      providerId: payload.sub,
+      email: payload.email,
+      name,
+      avatar: undefined,
+    };
   }
 
   /**
